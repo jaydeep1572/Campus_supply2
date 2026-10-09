@@ -173,7 +173,7 @@ class HomeScreen extends StatelessWidget {
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(horizontal, 24, horizontal, 0),
                   sliver: SliverToBoxAdapter(
-                    child: _StudentDeal(),
+                    child: _StudentDeal(context),
                   ),
                 ),
                 SliverPadding(
@@ -522,7 +522,7 @@ class HomeScreen extends StatelessWidget {
     return values[index % values.length];
   }
 
-  Widget _StudentDeal() {
+  Widget _StudentDeal(BuildContext context) {
     return Container(
       height: 176,
       clipBehavior: Clip.antiAlias,
