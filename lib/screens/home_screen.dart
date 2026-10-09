@@ -81,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                         }
 
                         return SizedBox(
-                          height: 118,
+                          height: 132,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: categories.length,
@@ -361,18 +361,24 @@ class HomeScreen extends StatelessWidget {
             (snapshot.data?['heroImageUrl'] ?? '').toString().trim();
 
         // Image-only hero: no text, buttons, gradient or split layout.
+        final heroHeight = wide ? 235.0 : 165.0;
         return ClipRRect(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
           child: SizedBox(
             width: double.infinity,
-            height: wide ? 235 : 200,
-            child: AppImage(
-              source: imageUrl.isNotEmpty
-                  ? imageUrl
-                  : 'assets/image/products/backpack.svg',
-              fit: BoxFit.cover,
-              fallback: const SizedBox.expand(
-                child: ColoredBox(color: blue),
+            height: heroHeight,
+            child: ColoredBox(
+              color: softBlue,
+              child: AppImage(
+                source: imageUrl.isNotEmpty
+                    ? imageUrl
+                    : 'assets/image/products/backpack.svg',
+                // Keep the entire uploaded banner visible instead of cropping
+                // its edges with BoxFit.cover.
+                fit: BoxFit.contain,
+                fallback: const Center(
+                  child: Icon(Icons.image_outlined, color: blue, size: 44),
+                ),
               ),
             ),
           ),
@@ -420,8 +426,9 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: ink,
+        color: softBlue,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: border),
       ),
       child: Row(
         children: [
@@ -460,7 +467,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward_rounded, color: yellow, size: 20),
+          const Icon(Icons.arrow_forward_rounded, color: blue, size: 20),
         ],
       ),
     );
@@ -580,8 +587,8 @@ class HomeScreen extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: 112,
-        padding: const EdgeInsets.all(11),
+        width: 124,
+        padding: const EdgeInsets.all(9),
         decoration: BoxDecoration(
           color: white,
           borderRadius: BorderRadius.circular(20),
@@ -590,16 +597,18 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 45,
-              height: 45,
-              decoration: BoxDecoration(
-                color: background,
-                shape: BoxShape.circle,
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: background,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: imageUrl.isNotEmpty
+                    ? _homeAssetImage(imageUrl)
+                    : Icon(icon, color: accent, size: 28),
               ),
-              child: imageUrl.isNotEmpty
-                  ? ClipOval(child: _homeAssetImage(imageUrl))
-                  : Icon(icon, color: accent, size: 22),
             ),
             const SizedBox(height: 8),
             Text(
@@ -609,7 +618,7 @@ class HomeScreen extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: ink,
-                fontSize: 10.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w800,
                 height: 1.15,
               ),
