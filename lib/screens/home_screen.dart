@@ -81,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                         }
 
                         return SizedBox(
-                          height: 132,
+                          height: 154,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: categories.length,
@@ -109,7 +109,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(horizontal, 30, horizontal, 0),
+                  padding: EdgeInsets.fromLTRB(horizontal, 34, horizontal, 0),
                   sliver: SliverToBoxAdapter(
                     child: _SectionHeading(
                       title: 'Popular this week',
@@ -361,31 +361,129 @@ class HomeScreen extends StatelessWidget {
       builder: (context, snapshot) {
         final imageUrl =
             (snapshot.data?['heroImageUrl'] ?? '').toString().trim();
+        final compact = MediaQuery.sizeOf(context).width < 560;
 
-        // Image-only hero: no text, buttons, gradient or split layout.
-        final heroHeight = wide ? 235.0 : 145.0;
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: SizedBox(
-            width: double.infinity,
-            height: heroHeight,
-            child: ColoredBox(
-              color: softBlue,
-              child: AppImage(
-                source: imageUrl.isNotEmpty
-                    ? imageUrl
-                    : 'assets/image/products/backpack.svg',
-                // Keep the entire uploaded banner visible instead of cropping
-                // its edges with BoxFit.cover.
-                fit: BoxFit.contain,
-                fallback: const Center(
-                  child: Icon(Icons.image_outlined, color: blue, size: 44),
+        return Container(
+          constraints: BoxConstraints(minHeight: compact ? 218 : wide ? 292 : 250),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFEAF2FF), Color(0xFFF7F9FF), Color(0xFFFFF7D6)],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0xFFDCE7FB)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Positioned(
+                right: -35,
+                top: -48,
+                child: Container(
+                  width: compact ? 150 : 250,
+                  height: compact ? 150 : 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(.55),
+                  ),
                 ),
               ),
-            ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(compact ? 18 : 30, 24, compact ? 18 : 24, 24),
+                child: compact
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _heroCopy(context, compact: true),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 96,
+                            width: double.infinity,
+                            child: AppImage(
+                              source: imageUrl.isNotEmpty ? imageUrl : 'assets/image/products/backpack.svg',
+                              fit: BoxFit.contain,
+                              fallback: const _HeroFallbackVisual(),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(flex: 6, child: _heroCopy(context, compact: false)),
+                          const SizedBox(width: 18),
+                          Expanded(
+                            flex: 5,
+                            child: SizedBox(
+                              height: wide ? 235 : 180,
+                              child: AppImage(
+                                source: imageUrl.isNotEmpty ? imageUrl : 'assets/image/products/backpack.svg',
+                                fit: BoxFit.contain,
+                                fallback: const _HeroFallbackVisual(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+
+  Widget _heroCopy(BuildContext context, {required bool compact}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(.85),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: const Color(0xFFD5E2FB)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bolt_rounded, color: Color(0xFF2563EB), size: 14),
+              SizedBox(width: 5),
+              Text('MADE FOR STUDENT LIFE', style: TextStyle(color: Color(0xFF2563EB), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .8)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 13),
+        Text(
+          'Your campus.\nYour essentials.',
+          style: TextStyle(
+            color: ink,
+            fontSize: compact ? 27 : 38,
+            height: 1.04,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.3,
+          ),
+        ),
+        const SizedBox(height: 9),
+        Text(
+          'Stationery, study gear and everyday finds — all in one place.',
+          style: TextStyle(color: muted, fontSize: compact ? 11 : 13, height: 1.45),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: () => Navigator.pushNamed(context, '/shop'),
+          icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+          label: const Text('Explore the shop'),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
+            textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          ),
+        ),
+      ],
     );
   }
 
@@ -589,12 +687,13 @@ class HomeScreen extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: 132,
-        padding: const EdgeInsets.all(10),
+        width: 142,
+        padding: const EdgeInsets.all(9),
         decoration: BoxDecoration(
           color: white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: border),
+          boxShadow: const [BoxShadow(color: Color(0x07172033), blurRadius: 12, offset: Offset(0, 4))],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1233,7 +1332,7 @@ class _FirebaseProductCard extends StatelessWidget {
       onTap:onTap,
       child: Container(
         padding:const EdgeInsets.all(12),
-        decoration:BoxDecoration(color:HomeScreen.white,borderRadius:BorderRadius.circular(20),border:Border.all(color:HomeScreen.border)),
+        decoration:BoxDecoration(color:HomeScreen.white,borderRadius:BorderRadius.circular(22),border:Border.all(color:HomeScreen.border),boxShadow:const [BoxShadow(color:Color(0x07172033),blurRadius:14,offset:Offset(0,5))]),
         child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Expanded(child:Container(width:double.infinity,decoration:BoxDecoration(color:const Color(0xFFF5F3EE),borderRadius:BorderRadius.circular(16)),clipBehavior:Clip.antiAlias,child:displayImageUrl.isNotEmpty
               ? AppImage(
