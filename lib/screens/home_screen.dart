@@ -48,7 +48,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(horizontal, 30, horizontal, 0),
+                  padding: EdgeInsets.fromLTRB(horizontal, 26, horizontal, 0),
                   sliver: SliverToBoxAdapter(
                     child: _SectionHeading(
                       title: 'Shop by category',
@@ -58,7 +58,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(horizontal, 14, horizontal, 0),
+                  padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 0),
                   sliver: SliverToBoxAdapter(
                     child: StreamBuilder<List<Map<String, dynamic>>>(
                       stream: FirestoreDatabase.instance.watchCategories(),
@@ -156,7 +156,7 @@ class HomeScreen extends StatelessWidget {
                             crossAxisCount: constraints.maxWidth >= 900 ? 4 : 2,
                             crossAxisSpacing: 14,
                             mainAxisSpacing: 14,
-                            childAspectRatio: constraints.maxWidth >= 900 ? .78 : .68,
+                            childAspectRatio: constraints.maxWidth >= 1100 ? .82 : constraints.maxWidth >= 760 ? .72 : .70,
                           ),
                           itemBuilder: (_, i) {
                             final p = products[i];
@@ -171,7 +171,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(horizontal, 28, horizontal, 0),
+                  padding: EdgeInsets.fromLTRB(horizontal, 24, horizontal, 0),
                   sliver: SliverToBoxAdapter(
                     child: _StudentDeal(),
                   ),
@@ -335,6 +335,8 @@ class HomeScreen extends StatelessWidget {
           },
           decoration: InputDecoration(
             hintText: 'Search stationery, art supplies, tech and more',
+            filled: true,
+            fillColor: white,
             prefixIcon: const Icon(Icons.search_rounded, color: blue),
             suffixIcon: Padding(
               padding: const EdgeInsets.all(6),
@@ -361,9 +363,9 @@ class HomeScreen extends StatelessWidget {
             (snapshot.data?['heroImageUrl'] ?? '').toString().trim();
 
         // Image-only hero: no text, buttons, gradient or split layout.
-        final heroHeight = wide ? 235.0 : 165.0;
+        final heroHeight = wide ? 235.0 : 145.0;
         return ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(22),
           child: SizedBox(
             width: double.infinity,
             height: heroHeight,
@@ -424,9 +426,9 @@ class HomeScreen extends StatelessWidget {
 
   Widget _StudentDeal() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
       decoration: BoxDecoration(
-        color: softBlue,
+        color: const Color(0xFFEAF2FF),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: border),
       ),
@@ -587,8 +589,8 @@ class HomeScreen extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: 124,
-        padding: const EdgeInsets.all(9),
+        width: 132,
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: white,
           borderRadius: BorderRadius.circular(20),
@@ -601,7 +603,7 @@ class HomeScreen extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: background,
+                  color: const Color(0xFFF7F8FA),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -664,6 +666,7 @@ class HomeScreen extends StatelessWidget {
           color: white,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: border),
+          boxShadow: const [BoxShadow(color: Color(0x06172033), blurRadius: 14, offset: Offset(0, 5))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1235,7 +1238,7 @@ class _FirebaseProductCard extends StatelessWidget {
           Expanded(child:Container(width:double.infinity,decoration:BoxDecoration(color:const Color(0xFFF5F3EE),borderRadius:BorderRadius.circular(16)),clipBehavior:Clip.antiAlias,child:displayImageUrl.isNotEmpty
               ? AppImage(
                   source: displayImageUrl,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   fallback: const Icon(
                     Icons.inventory_2_rounded,
                     color: HomeScreen.blue,
