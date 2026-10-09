@@ -222,35 +222,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(horizontal, 30, horizontal, 0),
+                  padding: EdgeInsets.fromLTRB(horizontal, 30, horizontal, 34),
                   sliver: SliverToBoxAdapter(
-                    child: _SectionHeading(
-                      title: 'What students say',
-                      subtitle: 'Real campus energy',
-                      action: '',
-                      onTap: () {},
+                    child: _HomeClosingCard(
+                      onTap: () => Navigator.pushNamed(context, '/shop'),
                     ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(horizontal, 14, horizontal, 34),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _Testimonial(
-                        quote: '“Finally, a store that gets student life.”',
-                        byline: 'Aarav • Architecture student',
-                      ),
-                      const SizedBox(height: 10),
-                      _Testimonial(
-                        quote: '“My stationery addiction has found a home.”',
-                        byline: 'Maya • Design student',
-                      ),
-                      const SizedBox(height: 10),
-                      _Testimonial(
-                        quote: '“Less searching. More creating.”',
-                        byline: 'Riya • Fine arts student',
-                      ),
-                    ]),
                   ),
                 ),
               ],
@@ -262,6 +238,19 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  String _greetingName() {
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = user?.displayName?.trim();
+    if (displayName != null && displayName.isNotEmpty) {
+      return displayName.split(RegExp(r'\\s+')).first;
+    }
+    final email = user?.email?.trim();
+    if (email != null && email.contains('@') && email.split('@').first.isNotEmpty) {
+      return email.split('@').first;
+    }
+    return 'Student';
+  }
+
   Widget _Header(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,11 +259,11 @@ class HomeScreen extends StatelessWidget {
           children: [
             const CampusLogo(size: 46),
             const SizedBox(width: 11),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Campus Supply',
                     style: TextStyle(
                       color: ink,
@@ -283,10 +272,12 @@ class HomeScreen extends StatelessWidget {
                       letterSpacing: -.8,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'Your campus. Your essentials.',
-                    style: TextStyle(
+                    'Welcome back, ${_greetingName()}!',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: muted,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -850,59 +841,89 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _Testimonial({
-    required String quote,
-    required String byline,
-  }) {
+}
+
+
+class _HomeClosingCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _HomeClosingCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: white,
-        borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: border),
+        color: const Color(0xFFEAF2FF),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: HomeScreen.border),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: softBlue,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.format_quote_rounded, color: blue, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  quote,
-                  style: const TextStyle(
-                    color: ink,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    height: 1.3,
-                  ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final content = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'READY FOR YOUR NEXT BIG IDEA?',
+                style: TextStyle(
+                  color: HomeScreen.blue,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.1,
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  byline,
-                  style: const TextStyle(
-                    color: muted,
-                    fontSize: 10.5,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Get your campus essentials in one place.',
+                style: TextStyle(
+                  color: HomeScreen.ink,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  height: 1.15,
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+              const SizedBox(height: 7),
+              const Text(
+                'From everyday stationery to creative supplies, find what helps you get things done.',
+                style: TextStyle(
+                  color: HomeScreen.muted,
+                  fontSize: 12,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 17),
+                label: const Text('Explore the shop'),
+              ),
+            ],
+          );
+          if (constraints.maxWidth < 520) return content;
+          return Row(
+            children: [
+              Expanded(child: content),
+              const SizedBox(width: 18),
+              Container(
+                width: 112,
+                height: 112,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(
+                  Icons.backpack_rounded,
+                  color: HomeScreen.blue,
+                  size: 62,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
-
 
 class _HomeBundleCard extends StatelessWidget {
   final Map<String, dynamic> bundle;
