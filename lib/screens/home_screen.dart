@@ -449,16 +449,16 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   'Student Budget. Sorted.',
                   style: TextStyle(
-                    color: white,
+                    color: ink,
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Show your student ID and unlock special savings on eligible essentials.',
+                  'Discover student-friendly prices on your campus essentials.',
                   style: TextStyle(
-                    color: Color(0xFFB9C0CC),
+                    color: muted,
                     fontSize: 11.5,
                     height: 1.4,
                   ),
@@ -1106,7 +1106,7 @@ class _HomeBundleEmpty extends StatelessWidget {
 Widget _homeAssetImage(String path) {
   return AppImage(
     source: path,
-    fit: BoxFit.cover,
+    fit: BoxFit.contain,
     fallback: const _HeroFallbackVisual(),
   );
 }
