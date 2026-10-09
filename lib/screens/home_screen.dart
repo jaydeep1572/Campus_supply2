@@ -30,8 +30,11 @@ class HomeScreen extends StatelessWidget {
           builder: (context, constraints) {
             final horizontal = constraints.maxWidth >= 760 ? 28.0 : 16.0;
 
-            return CustomScrollView(
-              slivers: [
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1160),
+                child: CustomScrollView(
+                  slivers: [
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 18),
                   sliver: SliverToBoxAdapter(
@@ -229,7 +232,9 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
+                  ],
+                ),
+              ),
             );
           },
         ),
