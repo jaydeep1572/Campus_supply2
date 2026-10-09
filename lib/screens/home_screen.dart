@@ -153,7 +153,7 @@ class HomeScreen extends StatelessWidget {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: products.length,
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: constraints.maxWidth >= 900 ? 4 : 2,
+                            crossAxisCount: constraints.maxWidth >= 560 ? 3 : 2,
                             crossAxisSpacing: 14,
                             mainAxisSpacing: 14,
                             childAspectRatio: constraints.maxWidth >= 1100 ? .82 : constraints.maxWidth >= 760 ? .72 : .70,
@@ -524,50 +524,103 @@ class HomeScreen extends StatelessWidget {
 
   Widget _StudentDeal() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+      height: 176,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF2FF),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: border),
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE7F0FF), Color(0xFFF2F6FF), Color(0xFFFFF7D8)],
+        ),
+        border: Border.all(color: const Color(0xFFDCE7FB)),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: yellow,
-              shape: BoxShape.circle,
+          Positioned(
+            right: -12,
+            bottom: -35,
+            child: Container(
+              width: 190,
+              height: 150,
+              decoration: const BoxDecoration(
+                color: Color(0xFFD9E8FF),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(110)),
+              ),
             ),
-            child: const Icon(Icons.school_rounded, color: ink, size: 23),
           ),
-          const SizedBox(width: 13),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 17, 18, 16),
+            child: Row(
               children: [
-                Text(
-                  'Student Budget. Sorted.',
-                  style: TextStyle(
-                    color: ink,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(.72),
+                          border: Border.all(color: const Color(0xFFBBD1FF)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text('STUDENT SPECIAL', style: TextStyle(color: blue, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .6)),
+                      ),
+                      const SizedBox(height: 9),
+                      const Text.rich(
+                        TextSpan(children: [
+                          TextSpan(text: 'Get Extra '),
+                          TextSpan(text: '10% OFF', style: TextStyle(color: blue)),
+                        ]),
+                        style: TextStyle(color: ink, fontSize: 21, fontWeight: FontWeight.w900, height: 1.1),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text('On selected stationery & study essentials', maxLines: 2, style: TextStyle(color: ink, fontSize: 11, height: 1.3)),
+                      const SizedBox(height: 11),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FilledButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/shop'),
+                          icon: const Icon(Icons.arrow_forward_rounded, size: 14),
+                          label: const Text('Shop now'),
+                          style: FilledButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 13), textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Discover student-friendly prices on your campus essentials.',
-                  style: TextStyle(
-                    color: muted,
-                    fontSize: 11.5,
-                    height: 1.4,
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 4,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 105,
+                        height: 105,
+                        decoration: const BoxDecoration(color: Color(0xFFFFF1AD), shape: BoxShape.circle),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        child: AppImage(
+                          source: 'assets/image/products/notebook.svg',
+                          fit: BoxFit.contain,
+                          fallback: const Icon(Icons.menu_book_rounded, color: blue, size: 75),
+                        ),
+                      ),
+                      const Positioned(
+                        top: 4,
+                        right: 0,
+                        child: Icon(Icons.auto_awesome_rounded, color: Color(0xFFF0B900), size: 22),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward_rounded, color: blue, size: 20),
         ],
       ),
     );
@@ -1326,34 +1379,106 @@ class _FirebaseProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = (product['imageUrl'] ?? '').toString().trim();
-    // Firestore may contain either a bundled asset path or a Firebase Storage URL.
     final displayImageUrl = imageUrl.isNotEmpty ? imageUrl : _fallbackImageUrl(product);
+    final name = (product['name'] ?? 'Product').toString();
+    final id = (product['id'] ?? product['productId'] ?? product['documentId'] ?? '').toString();
+    final rating = (product['rating'] ?? 'New').toString();
+    final category = (product['category'] ?? '').toString().toLowerCase();
+    final badge = category.contains('stationery') || category.contains('pen') ? 'BEST VALUE' : 'CAMPUS PICK';
+
     return GestureDetector(
-      onTap:onTap,
+      onTap: onTap,
       child: Container(
-        padding:const EdgeInsets.all(12),
-        decoration:BoxDecoration(color:HomeScreen.white,borderRadius:BorderRadius.circular(22),border:Border.all(color:HomeScreen.border),boxShadow:const [BoxShadow(color:Color(0x07172033),blurRadius:14,offset:Offset(0,5))]),
-        child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-          Expanded(child:Container(width:double.infinity,decoration:BoxDecoration(color:const Color(0xFFF5F3EE),borderRadius:BorderRadius.circular(16)),clipBehavior:Clip.antiAlias,child:displayImageUrl.isNotEmpty
-              ? AppImage(
-                  source: displayImageUrl,
-                  fit: BoxFit.contain,
-                  fallback: const Icon(
-                    Icons.inventory_2_rounded,
-                    color: HomeScreen.blue,
-                    size: 62,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: HomeScreen.white,
+          borderRadius: BorderRadius.circular(21),
+          border: Border.all(color: HomeScreen.border),
+          boxShadow: const [BoxShadow(color: Color(0x07172033), blurRadius: 13, offset: Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(color: const Color(0xFFF4F2ED), borderRadius: BorderRadius.circular(15)),
+                      clipBehavior: Clip.antiAlias,
+                      child: AppImage(
+                        source: displayImageUrl,
+                        fit: BoxFit.contain,
+                        fallback: const Icon(Icons.inventory_2_rounded, color: HomeScreen.blue, size: 54),
+                      ),
+                    ),
                   ),
-                )
-              : const Icon(
-                  Icons.inventory_2_rounded,
-                  color: HomeScreen.blue,
-                  size: 62,
-                ))),
-          const SizedBox(height:9),
-          Text((product['name']??'Product').toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:HomeScreen.ink,fontSize:13,fontWeight:FontWeight.w800)),
-          const SizedBox(height:5),
-          Row(children:[const Icon(Icons.star_rounded,color:Color(0xFFF4B400),size:15),const SizedBox(width:3),Text((product['rating']??'New').toString(),style:const TextStyle(color:HomeScreen.muted,fontSize:10.5,fontWeight:FontWeight.w700)),const Spacer(),Text('₹${product['price']??0}',style:const TextStyle(color:HomeScreen.blue,fontSize:15,fontWeight:FontWeight.w900))]),
-        ]),
+                  Positioned(
+                    left: 7,
+                    top: 7,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                      decoration: BoxDecoration(color: const Color(0xFFDDF5E5), borderRadius: BorderRadius.circular(7)),
+                      child: Text(badge, style: const TextStyle(color: Color(0xFF185C38), fontSize: 7.5, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                  Positioned(
+                    right: 7,
+                    top: 7,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      child: const Icon(Icons.favorite_border_rounded, color: HomeScreen.ink, size: 15),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: HomeScreen.ink, fontSize: 12, fontWeight: FontWeight.w800, height: 1.2)),
+            const SizedBox(height: 5),
+            Row(
+              children: [
+                const Icon(Icons.star_rounded, color: Color(0xFFF4B400), size: 14),
+                const SizedBox(width: 3),
+                Expanded(child: Text(rating, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: HomeScreen.muted, fontSize: 9.5, fontWeight: FontWeight.w700))),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('₹${product['price'] ?? 0}', style: const TextStyle(color: HomeScreen.blue, fontSize: 15, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 7),
+            SizedBox(
+              width: double.infinity,
+              height: 34,
+              child: FilledButton.icon(
+                onPressed: () async {
+                  final uid = FirebaseAuth.instance.currentUser?.uid;
+                  if (uid == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please sign in to add items to your cart.')));
+                    Navigator.pushNamed(context, '/login');
+                    return;
+                  }
+                  if (id.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This product is missing its ID. Open product details to continue.')));
+                    return;
+                  }
+                  try {
+                    await FirestoreDatabase.instance.addToCart(uid: uid, productId: id, quantity: 1);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$name added to cart.')));
+                  } catch (_) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not add this item. Please try again.')));
+                  }
+                },
+                icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                label: const Text('Add to Cart'),
+                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 5), textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
