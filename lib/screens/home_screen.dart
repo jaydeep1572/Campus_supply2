@@ -242,7 +242,7 @@ class HomeScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     final displayName = user?.displayName?.trim();
     if (displayName != null && displayName.isNotEmpty) {
-      return displayName.split(RegExp(r'\\s+')).first;
+      return displayName.split(RegExp(r'\s+')).first;
     }
     final email = user?.email?.trim();
     if (email != null && email.contains('@') && email.split('@').first.isNotEmpty) {
@@ -908,7 +908,7 @@ class _HomeClosingCard extends StatelessWidget {
                 width: 112,
                 height: 112,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.white.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: const Icon(
