@@ -456,7 +456,7 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 13),
         Text(
-          'Your campus.\nYour essentials.',
+          'Everything you need\nfor a successful semester.',
           style: TextStyle(
             color: ink,
             fontSize: compact ? 27 : 38,
@@ -476,7 +476,7 @@ class HomeScreen extends StatelessWidget {
         FilledButton.icon(
           onPressed: () => Navigator.pushNamed(context, '/shop'),
           icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-          label: const Text('Explore the shop'),
+          label: const Text('Shop Now'),
           style: FilledButton.styleFrom(
             minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 12),
@@ -1384,7 +1384,7 @@ class _FirebaseProductCard extends StatelessWidget {
     final id = (product['id'] ?? product['productId'] ?? product['documentId'] ?? '').toString();
     final rating = (product['rating'] ?? 'New').toString();
     final category = (product['category'] ?? '').toString().toLowerCase();
-    final badge = category.contains('stationery') || category.contains('pen') ? 'BEST VALUE' : 'CAMPUS PICK';
+    final badge = (product['category'] ?? '').toString().trim();
 
     return GestureDetector(
       onTap: onTap,
@@ -1419,7 +1419,7 @@ class _FirebaseProductCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                       decoration: BoxDecoration(color: const Color(0xFFDDF5E5), borderRadius: BorderRadius.circular(7)),
-                      child: Text(badge, style: const TextStyle(color: Color(0xFF185C38), fontSize: 7.5, fontWeight: FontWeight.w900)),
+                      child: Text(badge.toUpperCase(), style: const TextStyle(color: Color(0xFF185C38), fontSize: 7.5, fontWeight: FontWeight.w900)),
                     ),
                   ),
                   Positioned(
