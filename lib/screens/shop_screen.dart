@@ -21,6 +21,13 @@ class _ShopScreenState extends State<ShopScreen> {
 
   String category = 'All';
   String query = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -32,6 +39,7 @@ class _ShopScreenState extends State<ShopScreen> {
     if (args is Map) {
       query = (args['query'] ?? '').toString();
       category = (args['category'] ?? 'All').toString();
+      _searchController.text = query;
     }
   }
 
@@ -40,6 +48,11 @@ class _ShopScreenState extends State<ShopScreen> {
     return Scaffold(
       backgroundColor: cream,
       appBar: AppBar(
+        backgroundColor: cream,
+        foregroundColor: ink,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        titleSpacing: 20,
         title: const Text('Shop', style: TextStyle(fontWeight: FontWeight.w900)),
         actions: [
           IconButton(
@@ -145,17 +158,37 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextField(
+                        controller: _searchController,
                         onChanged: (value) => setState(() => query = value),
+                        textInputAction: TextInputAction.search,
                         decoration: InputDecoration(
-                          hintText: query.isEmpty ? 'Search products...' : query,
-                          prefixIcon:
-                              const Icon(Icons.search_rounded, color: blue),
+                          hintText: 'Search products...',
+                          filled: true,
+                          fillColor: Colors.white,
+                          prefixIcon: const Icon(Icons.search_rounded, color: blue),
                           suffixIcon: query.isEmpty
                               ? null
                               : IconButton(
-                                  onPressed: () => setState(() => query = ''),
+                                  tooltip: 'Clear search',
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => query = '');
+                                  },
                                   icon: const Icon(Icons.clear_rounded),
                                 ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: const BorderSide(color: border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: const BorderSide(color: border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: const BorderSide(color: blue, width: 1.5),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -175,10 +208,18 @@ class _ShopScreenState extends State<ShopScreen> {
                               onSelected: (_) =>
                                   setState(() => category = name),
                               selectedColor: blue,
+                              backgroundColor: Colors.white,
+                              side: BorderSide(
+                                color: selected ? blue : border,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              showCheckmark: false,
                               labelStyle: TextStyle(
                                 color: selected ? Colors.white : ink,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 11,
+                                fontSize: 12,
                               ),
                             );
                           },
@@ -201,7 +242,7 @@ class _ShopScreenState extends State<ShopScreen> {
                             crossAxisCount: columns,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
-                            childAspectRatio: columns == 2 ? .72 : .82,
+                            childAspectRatio: columns == 2 ? .64 : columns == 3 ? .72 : .78,
                           ),
                           itemBuilder: (_, i) => _card(context, filtered[i]),
                         ),
@@ -291,7 +332,33 @@ class _ShopScreenState extends State<ShopScreen> {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: ink, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
+            Text(
+              (p['category'] ?? '').toString().trim().isEmpty
+                  ? 'Campus essential'
+                  : (p['category'] ?? '').toString(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if ((p['description'] ?? '').toString().trim().isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                (p['description'] ?? '').toString().trim(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: muted,
+                  fontSize: 11,
+                  height: 1.25,
+                ),
+              ),
+            ],
+            const SizedBox(height: 7),
             Row(
               children: [
                 const Icon(
@@ -321,7 +388,15 @@ class _ShopScreenState extends State<ShopScreen> {
               child: OutlinedButton(
                 onPressed: () =>
                     Navigator.pushNamed(context, '/product', arguments: p),
-                child: const Text('View product'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: blue,
+                  side: const BorderSide(color: blue),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                child: const Text('View Product'),
               ),
             ),
           ],
