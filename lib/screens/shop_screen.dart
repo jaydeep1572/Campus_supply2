@@ -157,39 +157,70 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (value) => setState(() => query = value),
-                        textInputAction: TextInputAction.search,
-                        decoration: InputDecoration(
-                          hintText: 'Search products...',
-                          filled: true,
-                          fillColor: Colors.white,
-                          prefixIcon: const Icon(Icons.search_rounded, color: blue),
-                          suffixIcon: query.isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: 'Clear search',
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => query = '');
-                                  },
-                                  icon: const Icon(Icons.clear_rounded),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (_) => setState(() {}),
+                              onSubmitted: (_) => setState(
+                                () => query = _searchController.text.trim(),
+                              ),
+                              textInputAction: TextInputAction.search,
+                              decoration: InputDecoration(
+                                hintText: 'Search by product name...',
+                                filled: true,
+                                fillColor: Colors.white,
+                                prefixIcon: const Icon(Icons.search_rounded, color: blue),
+                                suffixIcon: _searchController.text.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        tooltip: 'Clear search',
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() => query = '');
+                                        },
+                                        icon: const Icon(Icons.clear_rounded),
+                                      ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(color: border),
                                 ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: const BorderSide(color: border),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(color: border),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(color: blue, width: 1.5),
+                                ),
+                              ),
+                            ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: const BorderSide(color: border),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            height: 56,
+                            child: ElevatedButton.icon(
+                              onPressed: () => setState(
+                                () => query = _searchController.text.trim(),
+                              ),
+                              icon: const Icon(Icons.search_rounded, size: 19),
+                              label: const Text('Search'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: blue,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                            ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: const BorderSide(color: blue, width: 1.5),
-                          ),
-                        ),
+                        ],
                       ),
                       const SizedBox(height: 14),
                       SizedBox(
