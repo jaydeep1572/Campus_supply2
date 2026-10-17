@@ -49,6 +49,9 @@ class AdminManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (section == AdminSection.bundles) {
+      return const _BundlesWorkspace();
+    }
     final canAdd = section == AdminSection.products || section == AdminSection.categories || section == AdminSection.bundles;
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -249,6 +252,17 @@ class AdminManagementScreen extends StatelessWidget {
     required TextEditingController price,
     required TextEditingController imageUrl,
   }) {
+    if (section == AdminSection.bundles) {
+      return _showBundleDialog(
+        context,
+        title: title,
+        name: name,
+        description: description,
+        price: price,
+        imageUrl: imageUrl,
+      );
+    }
+
     Uint8List? selectedImageBytes;
     String? selectedFileName;
     bool isSaving = false;
@@ -594,6 +608,433 @@ class AdminManagementScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future<bool?> _showBundleDialog(
+    BuildContext context, {
+    required String title,
+    required TextEditingController name,
+    required TextEditingController description,
+    required TextEditingController price,
+    required TextEditingController imageUrl,
+  }) {
+    Uint8List? selectedImageBytes;
+    String? selectedFileName;
+    bool isSaving = false;
+
+    bool isValidImageUrl(String value) {
+      final uri = Uri.tryParse(value.trim());
+      return uri != null &&
+          (uri.scheme == 'http' || uri.scheme == 'https') &&
+          uri.host.isNotEmpty;
+    }
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: !isSaving,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          Future<void> enterImageUrl() async {
+            if (isSaving) return;
+            final urlController = TextEditingController(text: imageUrl.text.trim());
+            final url = await showDialog<String>(
+              context: dialogContext,
+              builder: (urlContext) => AlertDialog(
+                title: const Text('Use image URL'),
+                content: TextField(
+                  controller: urlController,
+                  autofocus: true,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'Direct image URL',
+                    hintText: 'https://example.com/image.jpg',
+                    prefixIcon: Icon(Icons.link_rounded),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(urlContext),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      final value = urlController.text.trim();
+                      if (!isValidImageUrl(value)) {
+                        ScaffoldMessenger.of(urlContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Enter a valid http:// or https:// image URL'),
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.pop(urlContext, value);
+                    },
+                    child: const Text('Use URL'),
+                  ),
+                ],
+              ),
+            );
+            urlController.dispose();
+            if (url == null || url.isEmpty || !dialogContext.mounted) return;
+            setDialogState(() {
+              imageUrl.text = url;
+              selectedImageBytes = null;
+              selectedFileName = 'Image URL';
+            });
+          }
+
+          Future<void> pickImage() async {
+            if (isSaving) return;
+            try {
+              final picker = ImagePicker();
+              final file = await picker.pickImage(
+                source: ImageSource.gallery,
+                imageQuality: 90,
+                maxWidth: 1600,
+                maxHeight: 1600,
+              );
+              if (file == null) return;
+
+              final bytes = await file.readAsBytes();
+              final filename = file.name.trim();
+              final lowerName = filename.toLowerCase();
+              final supported = lowerName.endsWith('.jpg') ||
+                  lowerName.endsWith('.jpeg') ||
+                  lowerName.endsWith('.png') ||
+                  lowerName.endsWith('.webp') ||
+                  lowerName.endsWith('.gif');
+              if (!supported) {
+                throw Exception('Please choose JPG, JPEG, PNG, WEBP or GIF.');
+              }
+
+              setDialogState(() {
+                selectedImageBytes = bytes;
+                selectedFileName = filename;
+              });
+
+              final downloadUrl = await ImageStorageService.upload(
+                bytes: bytes,
+                folder: 'bundles',
+                fileName: filename,
+              );
+
+              if (!dialogContext.mounted) return;
+              setDialogState(() {
+                imageUrl.text = downloadUrl;
+                selectedFileName = filename + ' • uploaded';
+              });
+              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                const SnackBar(content: Text('Image uploaded to GitHub Storage successfully')),
+              );
+            } catch (e) {
+              if (dialogContext.mounted) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(content: Text('Image upload failed: ' + e.toString())),
+                );
+              }
+            }
+          }
+
+          Widget imagePreview() {
+            if (selectedImageBytes != null) {
+              return Image.memory(
+                selectedImageBytes!,
+                width: double.infinity,
+                height: 170,
+                fit: BoxFit.cover,
+              );
+            }
+            if (isValidImageUrl(imageUrl.text)) {
+              return AppImage(
+                source: imageUrl.text.trim(),
+                fit: BoxFit.cover,
+                placeholder: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                fallback: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.broken_image_outlined, size: 32),
+                      SizedBox(height: 5),
+                      Text('Image URL could not be loaded'),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return Container(
+              height: 170,
+              width: double.infinity,
+              color: const Color(0xFFEAF2FF),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.auto_awesome_mosaic_outlined,
+                      color: Color(0xFF2563EB), size: 38),
+                  SizedBox(height: 8),
+                  Text('Bundle image preview'),
+                ],
+              ),
+            );
+          }
+
+          return AlertDialog(
+            backgroundColor: const Color(0xFFFFFEFC),
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(24, 22, 24, 8),
+            contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+            title: Row(
+              children: [
+                Container(
+                  height: 42,
+                  width: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF2FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.auto_awesome_outlined,
+                      color: Color(0xFF2563EB)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(title,
+                      style: const TextStyle(
+                        color: Color(0xFF172554),
+                        fontWeight: FontWeight.w800,
+                      )),
+                ),
+              ],
+            ),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 560,
+                maxHeight: MediaQuery.of(dialogContext).size.height * 0.66,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Bundle details',
+                      style: TextStyle(
+                        color: Color(0xFF172554),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: name,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: InputDecoration(
+                        labelText: 'Bundle name',
+                        hintText: 'e.g. Exam Ready Kit',
+                        prefixIcon: const Icon(Icons.inventory_2_outlined),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: description,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: 'Description',
+                        hintText: 'What is included in this bundle?',
+                        alignLabelWithHint: true,
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(bottom: 28),
+                          child: Icon(Icons.notes_rounded),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: price,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Price (₹)',
+                        hintText: '0.00',
+                        prefixIcon: const Icon(Icons.currency_rupee_rounded),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Bundle image',
+                      style: TextStyle(
+                        color: Color(0xFF172554),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 170,
+                        child: imagePreview(),
+                      ),
+                    ),
+                    if (selectedFileName != null) ...[
+                      const SizedBox(height: 7),
+                      Text(
+                        selectedFileName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: imageUrl,
+                      keyboardType: TextInputType.url,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Image URL',
+                        hintText: 'https://example.com/image.jpg',
+                        prefixIcon: const Icon(Icons.link_rounded),
+                        suffixIcon: imageUrl.text.trim().isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'Clear image URL',
+                                onPressed: () => setDialogState(() {
+                                  imageUrl.clear();
+                                  selectedImageBytes = null;
+                                  selectedFileName = null;
+                                }),
+                                icon: const Icon(Icons.clear_rounded),
+                              ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(13),
+                          borderSide: const BorderSide(color: Color(0xFFDCE6F8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: isSaving ? null : pickImage,
+                          icon: const Icon(Icons.upload_file_rounded),
+                          label: const Text('Upload from device'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: isSaving ? null : enterImageUrl,
+                          icon: const Icon(Icons.link_rounded),
+                          label: const Text('Use image URL'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Choose an image file or paste a public direct image URL.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 18),
+            actions: [
+              TextButton(
+                onPressed: isSaving
+                    ? null
+                    : () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 13,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: isSaving
+                    ? null
+                    : () {
+                        final value = imageUrl.text.trim();
+                        if (value.isNotEmpty && !isValidImageUrl(value)) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter a valid public http:// or https:// image URL.'),
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                          return;
+                        }
+                        setDialogState(() => isSaving = true);
+                        Navigator.pop(dialogContext, true);
+                      },
+                icon: isSaving
+                    ? const SizedBox(
+                        width: 17,
+                        height: 17,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check_rounded),
+                label: const Text('Save bundle'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _delete(BuildContext context, QueryDocumentSnapshot<Map<String, dynamic>> doc) async {
     final yes = await showDialog<bool>(
       context: context,
@@ -621,5 +1062,405 @@ class AdminManagementScreen extends StatelessWidget {
       'role': role,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+}
+
+class _BundlesWorkspace extends StatelessWidget {
+  const _BundlesWorkspace();
+
+  static const Color _canvas = Color(0xFFFAF8F3);
+  static const Color _ink = Color(0xFF172554);
+  static const Color _blue = Color(0xFF2563EB);
+  static const Color _muted = Color(0xFF64748B);
+  static const Color _border = Color(0xFFDCE6F8);
+
+  final AdminManagementScreen _actions =
+      const AdminManagementScreen(section: AdminSection.bundles);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _canvas,
+      appBar: AppBar(
+        title: const Text(
+          'Bundles',
+          style: TextStyle(fontWeight: FontWeight.w800, color: _ink),
+        ),
+        backgroundColor: _canvas,
+        foregroundColor: _ink,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+            child: FilledButton.icon(
+              onPressed: () => _actions._add(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: _blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 19),
+              label: const Text('Add Bundle'),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance.collection('bundles').snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Container(
+                  margin: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(22),
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: _border),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.error_outline_rounded,
+                          color: Color(0xFFDC2626), size: 30),
+                      SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Unable to load Bundles.',
+                              style: TextStyle(
+                                color: _ink,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Please check your connection and try again.',
+                              style: TextStyle(color: _muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            if (!snapshot.hasData) {
+              return const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 34,
+                      width: 34,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: _blue,
+                      ),
+                    ),
+                    SizedBox(height: 14),
+                    Text(
+                      'Loading bundles...',
+                      style: TextStyle(color: _muted, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final docs = snapshot.data!.docs;
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final horizontalPadding = width < 600 ? 16.0 : 28.0;
+                final columns = width >= 1100 ? 3 : width >= 650 ? 2 : 1;
+                final cardExtent = width < 520 ? 375.0 : width < 900 ? 360.0 : 355.0;
+
+                return SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    12,
+                    horizontalPadding,
+                    28,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Manage student bundles and package details.',
+                        style: TextStyle(
+                          color: _muted,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      if (docs.isEmpty)
+                        _emptyState(context)
+                      else
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: docs.length,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            mainAxisExtent: cardExtent,
+                          ),
+                          itemBuilder: (context, index) =>
+                              _bundleCard(context, docs[index]),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState(BuildContext context) {
+    return Center(
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 520),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: _border),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 74,
+              height: 74,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF2FF),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: const Icon(
+                Icons.inventory_2_outlined,
+                color: _blue,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'No bundles yet.',
+              style: TextStyle(
+                color: _ink,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Create a bundle to organize useful student essentials into one package.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: _muted, height: 1.5),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => _actions._add(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: _blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add your first bundle'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bundleCard(
+    BuildContext context,
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final name = (data['name'] ?? data['title'] ?? doc.id).toString();
+    final description = (data['description'] ?? 'No description provided.')
+        .toString()
+        .trim();
+    final imageUrl = (data['imageUrl'] ?? '').toString().trim();
+    final rawPrice = data['price'];
+    final priceLabel = rawPrice == null
+        ? '₹0'
+        : rawPrice is num
+            ? '₹' + (rawPrice % 1 == 0
+                ? rawPrice.toStringAsFixed(0)
+                : rawPrice.toStringAsFixed(2))
+            : '₹' + rawPrice.toString();
+
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: _border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: imageUrl.isEmpty
+                ? Container(
+                    color: const Color(0xFFEAF2FF),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_mosaic_outlined,
+                          color: _blue,
+                          size: 42,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Bundle image',
+                          style: TextStyle(
+                            color: _muted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : AppImage(
+                    source: imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _blue,
+                      ),
+                    ),
+                    fallback: Container(
+                      color: const Color(0xFFEAF2FF),
+                      child: const Center(
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: _blue,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 10, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: _ink,
+                            fontSize: 15.5,
+                            height: 1.25,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        height: 32,
+                        width: 32,
+                        child: PopupMenuButton<String>(
+                          tooltip: 'Bundle actions',
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.more_vert_rounded,
+                              color: _muted),
+                          onSelected: (value) {
+                            if (value == 'edit') _actions._edit(context, doc);
+                            if (value == 'delete') _actions._delete(context, doc);
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_outlined, size: 18),
+                                  SizedBox(width: 10),
+                                  Text('Edit bundle'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_outline_rounded, size: 18),
+                                  SizedBox(width: 10),
+                                  Text('Delete bundle'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    priceLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _blue,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 19,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Expanded(
+                    child: Text(
+                      description.isEmpty ? 'No description provided.' : description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _muted,
+                        fontSize: 12.5,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
